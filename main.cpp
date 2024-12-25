@@ -1,8 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <regex>
-#include <stdexcept>
 #include <cmath>
 #include <Python.h>
 #include "matplotlibcpp.h"
