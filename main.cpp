@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <regex>
+#include <stdexcept>
 #include <cmath>
 #include <Python.h>
 #include "matplotlibcpp.h"
@@ -76,25 +78,63 @@ class z1 : public ThreeD{
 };
 
 class z2 : public ThreeD{
+private:
+    double t0 , t1 , t2 , t3;
+    double dT1 , dT2;
+    int n = 60;
+    
 public:
+    int a , b , c ;
     vector<vector<double>> x,y,z,z2; // Coordiante 2-D Matrices Storing coordinates
     vector<double> tx,ty,tz,tz2; // 1-D temporary coordinates matrices
     double theta,phi;
+    virtual double x_calc(int param, double theta, double phi) = 0;
+    virtual double y_calc(int param, double theta, double phi) = 0;
+    virtual double z_calc(int param, double phi) = 0;
+    
+//Function to plot
+    void calc_bounds (double l , double m , double o , double p)
+    {
+     t0 = l, t1 = m;
+     dT1 = (t1 - t0) / (n - 1);
 
+     t2 = o , t3 = p;
+     dT2 = (t2 - t3) / (n - 1);
+    }
 
+    void plot(double l , double m , double o , double p, int a , int b , int c){
+        
+        calc_bounds (l,m,o,p);
+
+        PyObject* ax = plt::chart(111);
+        plt::Clear3DChart(ax);
+
+        
+
+        for (int i = 0; i < n; ++i) {
+            tx.clear();
+            ty.clear();
+            tz.clear();
+            theta = t0 + i * dT1;
+
+           for (int j = 0; j < n; ++j) {
+                phi = t2 + j * dT2;
+                tx.push_back(x_calc(a,theta,phi));
+                ty.push_back(y_calc(b,theta,phi));
+                tz.push_back(z_calc(c,phi));
+            }
+            x.push_back(tx);
+            y.push_back(ty);
+            z.push_back(tz);
+        }
+
+        plt::surface3D(ax, x, y, z, "blue", 0.7);
+        plt::show();
+    }
 };
 
 
 class sphere : public z2{
-
-
-int ro = 4;
-int n = 60;
-    double t0 = 0, t1 = 2*3.1428;
-    double dT1 = (t1 - t0) / (n - 1);
-
-    double t2 = 3.1428;
-    double dT2 = (t2 - t0) / (n - 1);
 
 public:
 
@@ -111,33 +151,7 @@ public:
         return ro*cos(phi);
     }
 
-//Function to plot
-    void plot(){
-        PyObject* ax = plt::chart(111);
-        plt::Clear3DChart(ax);
 
-        
-
-        for (int i = 0; i < n; ++i) {
-            tx.clear();
-            ty.clear();
-            tz.clear();
-            theta = t0 + i * dT1;
-
-            for (int j = 0; j < n; ++j) {
-                phi = t0 + j * dT2;
-                tx.push_back(x_calc(ro,theta,phi));
-                ty.push_back(y_calc(ro,theta,phi));
-                tz.push_back(z_calc(ro,phi));
-            }
-            x.push_back(tx);
-            y.push_back(ty);
-            z.push_back(tz);
-        }
-
-        plt::surface3D(ax, x, y, z, "blue", 0.7);
-        plt::show();
-    }
 };
 
 
@@ -145,78 +159,27 @@ public:
 class ellipsoid : public z2{
      // Denominator values
     private:
-    int a = 2;
-    int b = 4;
-    int c = 3;
 
-    int n = 60;
-    double t0 = 0, t1 = 2*3.1428;
-    double dT1 = (t1 - t0) / (n - 1);
+    public:
 
-    double t2 = 3.1428;
-    double dT2 = (t2 - t0) / (n - 1);
-
-public:
-
-// Functions to calculate coordinates
-    double x_calc(int denom, double theta, double  phi) {
-        return denom*sin(phi)*cos(theta);
-    }
-
-    double y_calc(int denom, double theta, double  phi) {
-        return denom*sin(theta)*sin(phi);
-    }
-
-    double z_calc(int denom, double  phi) {
-        return denom*cos(phi);
-    }
-
-
-
-    //Plotting Function
-    void plot(){
-        PyObject* ax = plt::chart(111);
-        plt::Clear3DChart(ax);
-
-        
-
-        for (int i = 0; i < n; ++i) {
-            tx.clear();
-            ty.clear();
-            tz.clear();
-            theta = t0 + i * dT1;
-
-            for (int j = 0; j < n; ++j) {
-                phi = t0 + j * dT2;
-                tx.push_back(x_calc(a,theta,phi));
-                ty.push_back(y_calc(b,theta,phi));
-                tz.push_back(z_calc(c,phi));
-            }
-            x.push_back(tx);
-            y.push_back(ty);
-            z.push_back(tz);
+    // Functions to calculate coordinates
+        double x_calc(int denom, double theta, double  phi) {
+            return denom*sin(phi)*cos(theta);
         }
 
-        plt::surface3D(ax, x, y, z, "blue", 0.7);
-        plt::show();
-    }
+        double y_calc(int denom, double theta, double  phi) {
+            return denom*sin(theta)*sin(phi);
+        }
+
+        double z_calc(int denom, double  phi) {
+            return denom*cos(phi);
+        }
 
 };
 
 
-class oneSheetHyperboloid : public z2{
+class cone : public z2{
     private:
-
-    int a = 2;
-    int b = 4;
-    int c = 3;
-
-    int n = 60;
-    double t0 = 0, t1 = 2*3.1428;
-    double dT1 = (t1 - t0) / (n - 1);
-
-    double t2 = -4 ,t3 = 4;
-    double dT2 = (t3 - t2) / (n - 1);
 
     public:
 
@@ -231,36 +194,6 @@ class oneSheetHyperboloid : public z2{
     double z_calc(int denom, double  phi) {
         return denom*sinh(phi);
     }
-    
-    void plot(){
-        PyObject* ax = plt::chart(111);
-        plt::Clear3DChart(ax);
-
-        
-
-        for (int i = 0; i < n; ++i) {
-            tx.clear();
-            ty.clear();
-            tz.clear();
-            theta = t0 + i * dT1;
-
-            for (int j = 0; j < n; ++j) {
-                phi = t2 + j * dT2;
-                tx.push_back(x_calc(a,theta,phi));
-                ty.push_back(y_calc(b,theta,phi));
-                tz.push_back(z_calc(c,phi));
-            }
-            x.push_back(tx);
-            y.push_back(ty);
-            z.push_back(tz);
-        }
-
-        plt::surface3D(ax, x, y, z, "blue", 0.7);
-        plt::show();
-    }
-
-
-
 
 };
 
@@ -324,68 +257,20 @@ class twoSheetHyperboloid : public z2{
     }
 };
 
-class cone : public z2{
-    private:
 
-    int R = 16;
-
-    int n = 60;
-    double t0 = 0, t1 = 2*3.1428;
-    double dT1 = (t1 - t0) / (n - 1);
-
-    double t2 = R;
-    double dT2 = (t2 - t0) / (n - 1);
-
-    public:
-
-    double x_calc(double r, double theta) {
-        return r*cos(theta);
-    }
-
-    double y_calc(double r, double theta) {
-        return r*sin(theta);
-    }
-
-    double z_calc(int R, double h, int r) {
-        return h - ((h*r)/R);
-    }
-    
-    void plot(){
-        PyObject* ax = plt::chart(111);
-        plt::Clear3DChart(ax);
-
-        
-
-        for (int i = 0; i < n; ++i) {
-            tx.clear();
-            ty.clear();
-            tz.clear();
-            theta = t0 + i * dT1;
-
-            for (int j = 0; j < n; ++j) {
-                phi = t0 + j * dT2;
-                tx.push_back(x_calc(phi,theta));
-                ty.push_back(y_calc(phi,theta));
-                tz.push_back(z_calc(R,phi,phi));
-            }
-            x.push_back(tx);
-            y.push_back(ty);
-            z.push_back(tz);
-        }
-
-        plt::surface3D(ax, x, y, z, "blue", 0.7);
-        plt::show();
-    }
-
-};
 int main()
 {
     
-    cone surface;
+    // sphere surface;
 
-    surface.plot();
+    // surface.plot(0, M_PI, 0, 2 * M_PI, 1, 1, 1);
     
+    // ellipsoid ell;
+    // ell.plot(0, M_PI, 0, 2 * M_PI, 2, 1, 1); // Plot an ellipsoid
 
+     
+cone c1;
+c1.plot(0, 2 * M_PI, -4, 4, 2, 4, 3);
 
     return 0;
 }
